@@ -1,0 +1,692 @@
+/* ============================================================
+   CINEMATIC PORTFOLIO — Manuel Vélez
+   ============================================================ */
+
+/* ── Google Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap');
+
+/* ── Variables ── */
+:root {
+  --bg:        #000000;
+  --surface:   #0a0a0a;
+  --border:    rgba(255, 255, 255, 0.08);
+  --border-h:  rgba(255, 255, 255, 0.18);
+  --text:      #f0ece4;
+  --muted:     rgba(240, 236, 228, 0.45);
+  --accent:    #c8b99a;
+  --accent-b:  #e8d5b0;
+  --serif:     'Cormorant Garamond', Georgia, serif;
+  --sans:      'Inter', system-ui, sans-serif;
+  --mono:      'JetBrains Mono', monospace;
+  --ease:      cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Reset base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+::selection { background: var(--accent); color: #000; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+img { display: block; max-width: 100%; }
+a  { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar            { width: 3px; }
+::-webkit-scrollbar-track      { background: #000; }
+::-webkit-scrollbar-thumb      { background: var(--border-h); }
+
+/* ============================================================
+   ANIMACIONES
+   ============================================================ */
+
+/* Scanline — barra de luz que baja en loop */
+@keyframes scanline {
+  0%   { top: -2px; opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { top: 100vh; opacity: 0; }
+}
+
+/* Reveal — elementos que suben al entrar en viewport */
+@keyframes revealUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes revealLeft {
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes barExpand {
+  to { width: var(--bar-w, 80px); }
+}
+@keyframes fullBarExpand {
+  to { width: 100%; }
+}
+
+/* Clase base para elementos que se revelan al hacer scroll.
+   JS agrega .is-visible cuando entran al viewport. */
+.cin-reveal {
+  opacity: 0;
+  transform: translateY(36px);
+  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+}
+.cin-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cin-reveal-l {
+  opacity: 0;
+  transform: translateX(-28px);
+  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+}
+.cin-reveal-l.is-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Delays escalonados */
+.cin-d1  { transition-delay: 0.1s; }
+.cin-d2  { transition-delay: 0.2s; }
+.cin-d3  { transition-delay: 0.3s; }
+.cin-d4  { transition-delay: 0.4s; }
+.cin-d5  { transition-delay: 0.5s; }
+.cin-d6  { transition-delay: 0.6s; }
+
+/* ============================================================
+   UI FIJOS
+   ============================================================ */
+
+/* Barra de progreso de página */
+#cin-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 1px;
+  width: 0%;
+  background: var(--accent);
+  z-index: 999;
+  transition: width 0.1s linear;
+}
+
+/* Scanline flotante */
+#cin-scanline {
+  position: fixed;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,185,154,0.35), transparent);
+  z-index: 998;
+  pointer-events: none;
+  animation: scanline 7s linear infinite;
+}
+
+/* Número de sección — esquina superior derecha */
+.cin-section-num {
+  position: absolute;
+  top: 2.5rem;
+  right: 2rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+/* Eyebrow — etiqueta pequeña sobre el título */
+.cin-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* Barra decorativa */
+.cin-bar {
+  height: 1px;
+  background: var(--accent);
+  width: 0;
+  transition: width 1.3s var(--ease);
+  margin-top: 1.5rem;
+}
+.cin-bar.is-visible { width: var(--bar-w, 80px); }
+
+.cin-bar-full {
+  height: 1px;
+  background: var(--border);
+  width: 0;
+  transition: width 1.4s var(--ease);
+}
+.cin-bar-full.is-visible { width: 100%; }
+
+/* ============================================================
+   LAYOUT COMÚN DE SECCIONES
+   ============================================================ */
+
+section, header {
+  padding: 7rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+  border-top: 1px solid var(--border);
+}
+header { border-top: none; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+
+/* Títulos de sección */
+section h2 {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 5.5vw, 4.5rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+section > .Cabecera > p,
+section > p:first-of-type {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 3rem;
+}
+
+/* ============================================================
+   HEADER / HERO
+   ============================================================ */
+
+header {
+  text-align: center;
+  /* Grid de fondo */
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 80px 80px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 100%);
+  mask-image:         radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 100%);
+}
+
+header img {
+  display: none; /* Ocultamos la foto si no existe */
+}
+
+header h1 {
+  font-family: var(--serif);
+  font-size: clamp(3.5rem, 10vw, 8rem);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+header h3 {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 300;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+}
+
+header p {
+  font-size: 0.95rem;
+  color: var(--muted);
+  max-width: 36rem;
+  margin: 0 auto 2.5rem;
+  line-height: 1.85;
+}
+
+header a {
+  display: inline-block;
+  padding: 0.75rem 2.2rem;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+header a:hover { background: var(--accent); color: #000; }
+
+/* Flecha scroll */
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 50px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+  animation: scanline 2.5s linear infinite;
+}
+
+/* ============================================================
+   SOBRE MÍ
+   ============================================================ */
+
+#SobreMi p {
+  max-width: 600px;
+  font-size: 0.95rem;
+  color: var(--muted);
+  line-height: 1.9;
+  margin-bottom: 3rem;
+}
+
+/* Cards de habilidades */
+.skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.cardIcon {
+  padding: 2rem 1.8rem;
+  border-right: 1px solid var(--border);
+  transition: background 0.4s ease;
+  position: relative;
+}
+.cardIcon:last-child { border-right: none; }
+.cardIcon:hover { background: rgba(200,185,154,0.03); }
+
+.cardIcon .icon {
+  font-size: 1rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.cardIcon h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.cardIcon p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ============================================================
+   TECNOLOGÍAS — lista editorial
+   ============================================================ */
+
+.CardTecn {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tecn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.3s ease, padding-left 0.3s ease;
+  cursor: default;
+}
+.tecn:first-child { border-top: 1px solid var(--border); }
+.tecn:hover {
+  background: rgba(200,185,154,0.02);
+  padding-left: 1rem;
+}
+
+.tecn img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: grayscale(40%);
+  transition: filter 0.3s ease;
+}
+.tecn:hover img { filter: grayscale(0%); }
+
+.tecn h3 {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--text);
+  flex: 1;
+  margin-left: 1.5rem;
+}
+
+/* Número de orden — lo añade JS */
+.tecn::before {
+  content: attr(data-index);
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--muted);
+  min-width: 2rem;
+}
+
+/* ============================================================
+   PROYECTOS — layout alternado
+   ============================================================ */
+
+.cardProyecto {
+  display: flex;
+  flex-direction: column;
+  gap: 5rem;
+}
+
+.cardProyecto > div {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .cardProyecto > div               { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+  .cardProyecto > div:nth-child(even) { direction: rtl; }
+  .cardProyecto > div:nth-child(even) > * { direction: ltr; }
+}
+
+.cardProyecto > div > img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  filter: grayscale(35%) contrast(1.05);
+  transition: filter 0.6s ease, transform 0.6s ease;
+}
+.cardProyecto > div:hover > img {
+  filter: grayscale(0%) contrast(1);
+  transform: scale(1.02);
+}
+
+.cardProyecto .Contenido {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.cardProyecto .Contenido h3 {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 300;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.cardProyecto .Contenido p {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.85;
+}
+
+.cardProyecto .Tecnologias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.cardProyecto .Tecnologias span {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.6rem;
+}
+
+.cardProyecto .Acciones {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .cardProyecto .Acciones { grid-column: auto; align-self: end; }
+}
+
+.cardProyecto .Acciones a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.3rem;
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: border-color 0.3s, color 0.3s, background 0.3s;
+}
+.cardProyecto .Acciones a:first-child {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cardProyecto .Acciones a:first-child:hover {
+  background: var(--accent);
+  color: #000;
+}
+.cardProyecto .Acciones a:not(:first-child):hover {
+  border-color: var(--border-h);
+  color: var(--text);
+}
+
+/* ============================================================
+   EXPERIENCIA TÉCNICA
+   ============================================================ */
+
+#ExperienciaTecnica > p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 3rem;
+}
+
+.CardXP {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+.CardXP:first-of-type { border-top: 1px solid var(--border); }
+
+.CardXP > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2rem;
+  padding: 2.5rem 0;
+  transition: background 0.3s ease;
+}
+.CardXP > div:hover { background: rgba(200,185,154,0.02); }
+
+.CardXP .Head {
+  font-size: 1rem;
+  color: var(--accent);
+  min-width: 2rem;
+  padding-top: 0.15rem;
+}
+
+.CardXP .Contenido h3 {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.CardXP .Contenido li {
+  font-size: 0.87rem;
+  color: var(--muted);
+  line-height: 1.7;
+  padding-left: 1rem;
+  position: relative;
+}
+.CardXP .Contenido li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+/* ============================================================
+   OBJETIVOS PROFESIONALES
+   ============================================================ */
+
+.CardOBJ {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0;
+  border: 1px solid var(--border);
+}
+
+.CardOBJ > div {
+  padding: 2.5rem 2rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.4s ease;
+}
+.CardOBJ > div:hover { background: rgba(200,185,154,0.03); }
+.CardOBJ > div:last-child { border-right: none; }
+
+.CardOBJ > div i {
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.CardOBJ > div h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.CardOBJ > div p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+/* Roles disponibles */
+.CardOBJ > div:last-child span {
+  display: inline-block;
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.9rem;
+  margin: 0.25rem 0.25rem 0 0;
+  transition: border-color 0.3s, color 0.3s;
+}
+.CardOBJ > div:last-child span:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ============================================================
+   CONTACTO
+   ============================================================ */
+
+#Contacto .Cabecera h2 {
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  letter-spacing: -0.03em;
+}
+
+[cardContacto],
+.cardContacto {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+}
+
+[cardContacto] a,
+.cardContacto a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--text);
+  transition: background 0.3s ease, padding-left 0.3s ease;
+}
+
+[cardContacto] a:hover,
+.cardContacto a:hover {
+  background: rgba(200,185,154,0.03);
+  padding-left: 1rem;
+}
+
+[cardContacto] a i,
+.cardContacto a i {
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin-right: 1rem;
+}
+
+[cardContacto] a span,
+.cardContacto a span {
+  flex: 1;
+}
+
+[cardContacto] a::after,
+.cardContacto a::after {
+  content: '↗';
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  transition: transform 0.3s ease;
+}
+
+[cardContacto] a:hover::after,
+.cardContacto a:hover::after {
+  transform: translateX(4px);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem;
+  text-align: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+footer p {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(240, 236, 228, 0.65);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 640px) {
+  section, header { padding: 5rem 1.25rem; }
+  .cin-section-num { display: none; }
+  .skills { grid-template-columns: 1fr; }
+  .cardIcon { border-right: none; border-bottom: 1px solid var(--border); }
+  .CardOBJ { grid-template-columns: 1fr; }
+  .CardOBJ > div { border-right: none; }
+}

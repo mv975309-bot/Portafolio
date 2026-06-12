@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio</title>
+    <title>Manuel Velez — Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="../CSS/style.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="../IMG/favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../IMG/favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../IMG/favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="../IMG/favicon_io/site.webmanifest">
 </head>
 <body>
     <header>
@@ -316,7 +321,7 @@
                 <span>Whatsapp</span>
                 
             </a>
-            <a href="www.linkedin.com/in/manu-velez-168b6735a" target="_blank">
+            <a href="https://linkedin.com/in/manu-velez-168b6735a" target="_blank">
                 <i class="fa-brands fa-linkedin-in"></i>
                 <span>Linkedin</span>
             </a>
@@ -329,5 +334,69 @@
     <footer>
         <p>© 2026 Manuel Vélez. Diseñado y desarrollado con pasión.</p>
     </footer>
+
+    <script>
+    // ── UI fija ──────────────────────────────────────────────
+    const progress  = document.createElement('div');
+    progress.id     = 'cin-progress';
+    document.body.prepend(progress);
+
+    const scanline  = document.createElement('div');
+    scanline.id     = 'cin-scanline';
+    document.body.prepend(scanline);
+
+    // ── Barra de progreso de página ──────────────────────────
+    window.addEventListener('scroll', () => {
+      const scrolled = window.scrollY;
+      const total    = document.documentElement.scrollHeight - window.innerHeight;
+      progress.style.width = total > 0 ? (scrolled / total * 100) + '%' : '0%';
+    }, { passive: true });
+
+    // ── Números de sección ───────────────────────────────────
+    document.querySelectorAll('section').forEach((sec, i) => {
+      const num = document.createElement('span');
+      num.className = 'cin-section-num';
+      num.textContent = String(i).padStart(2,'0') + ' /';
+      sec.style.position = 'relative';
+      sec.appendChild(num);
+    });
+
+    // ── Números en tecnologías ───────────────────────────────
+    document.querySelectorAll('.tecn').forEach((el, i) => {
+      el.setAttribute('data-index', String(i + 1).padStart(2,'0'));
+    });
+
+    // ── IntersectionObserver — animaciones de scroll ─────────
+    const revealTargets = [
+      { selector: 'header h1, header h3, header p, header a', cls: 'cin-reveal' },
+      { selector: 'section h2',                               cls: 'cin-reveal' },
+      { selector: '.Cabecera p, section > p',                 cls: 'cin-reveal cin-d1' },
+      { selector: '#SobreMi p',                               cls: 'cin-reveal cin-d1' },
+      { selector: '.cardIcon',                                cls: 'cin-reveal' },
+      { selector: '.tecn',                                    cls: 'cin-reveal' },
+      { selector: '.cardProyecto > div',                      cls: 'cin-reveal' },
+      { selector: '.CardXP > div',                            cls: 'cin-reveal' },
+      { selector: '.CardOBJ > div',                           cls: 'cin-reveal' },
+      { selector: '[cardContacto] a',                         cls: 'cin-reveal' },
+    ];
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-visible');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' });
+
+    revealTargets.forEach(({ selector, cls }) => {
+      document.querySelectorAll(selector).forEach((el, i) => {
+        cls.split(' ').forEach(c => c && el.classList.add(c));
+        // Delay escalonado automático para listas
+        if (i > 0 && i < 7) el.classList.add(`cin-d${i}`);
+        observer.observe(el);
+      });
+    });
+    </script>
 </body>
 </html>
